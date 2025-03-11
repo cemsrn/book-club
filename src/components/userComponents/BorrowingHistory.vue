@@ -1,31 +1,28 @@
-<script>
-export default {
-  name: "BorrowingHistory",
-  props: {
-    history: {
-      type: Array,
-      default: () => [],
-    },
+<script setup>
+import { computed } from "vue";
+
+const props = defineProps({
+  history: {
+    type: Array,
+    default: () => [],
   },
-  computed: {
-    sortedHistory() {
-      if (!this.history) return [];
-      // Sort by borrow date, newest first
-      return [...this.history].sort((a, b) => {
-        return new Date(b.borrow_date) - new Date(a.borrow_date);
-      });
-    },
-  },
-  methods: {
-    formatDate(dateString) {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-  },
+});
+
+const sortedHistory = computed(() => {
+  if (!props.history) return [];
+  // Sort by borrow date, newest first
+  return [...props.history].sort((a, b) => {
+    return new Date(b.borrow_date) - new Date(a.borrow_date);
+  });
+});
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 </script>
 

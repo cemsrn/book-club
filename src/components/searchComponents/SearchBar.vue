@@ -1,33 +1,24 @@
-<script>
+<script setup>
 import { ref } from "vue";
 
-export default {
-  name: "SearchBar",
-  props: {
-    placeholder: {
-      type: String,
-      default: "Search...",
-    },
+const props = defineProps({
+  placeholder: {
+    type: String,
+    default: "Search...",
   },
-  setup(props, { emit }) {
-    const searchText = ref("");
+});
 
-    function clearSearch() {
-      searchText.value = "";
-      emit("search", "");
-    }
+const emit = defineEmits(["search"]);
+const searchText = ref("");
 
-    function updateSearch() {
-      emit("search", searchText.value);
-    }
+function clearSearch() {
+  searchText.value = "";
+  emit("search", "");
+}
 
-    return {
-      searchText,
-      clearSearch,
-      updateSearch,
-    };
-  },
-};
+function updateSearch() {
+  emit("search", searchText.value);
+}
 </script>
 
 <template>

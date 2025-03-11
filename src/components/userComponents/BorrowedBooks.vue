@@ -1,32 +1,31 @@
-<script>
-export default {
-  name: "BorrowedBooks",
-  props: {
-    borrowedBooks: {
-      type: Array,
-      required: true,
-    },
-    isReturning: Boolean,
-    returningBookId: [String, Number],
+<script setup>
+const props = defineProps({
+  borrowedBooks: {
+    type: Array,
+    required: true,
   },
-  emits: ["return-book", "navigate-borrow"],
-  methods: {
-    formatDate(dateString) {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-    handleReturnBook(bookId) {
-      // Forward the event to parent
-      this.$emit("return-book", bookId);
-    },
-    navigateToBorrowBooks() {
-      this.$emit("navigate-borrow");
-    },
-  },
+  isReturning: Boolean,
+  returningBookId: [String, Number],
+});
+
+const emit = defineEmits(["return-book", "navigate-borrow"]);
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const handleReturnBook = (bookId) => {
+  // Forward the event to parent
+  emit("return-book", bookId);
+};
+
+const navigateToBorrowBooks = () => {
+  emit("navigate-borrow");
 };
 </script>
 

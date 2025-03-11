@@ -1,11 +1,8 @@
-<script>
-export default {
-  name: "LoadingAndErrorStates",
-  props: {
-    loading: Boolean,
-    error: String,
-  },
-};
+<script setup>
+defineProps({
+  loading: Boolean,
+  error: String,
+});
 </script>
 
 <template>

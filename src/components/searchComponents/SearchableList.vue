@@ -1,65 +1,52 @@
-<script>
+<script setup>
 import { ref, computed } from "vue";
 import SearchBar from "./SearchBar.vue";
 
-export default {
-  name: "SearchableList",
-  components: {
-    SearchBar,
+const props = defineProps({
+  items: {
+    type: Array,
+    required: true,
   },
-  props: {
-    items: {
-      type: Array,
-      required: true,
-    },
-    searchFields: {
-      type: Array,
-      default: () => ["name", "title"],
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-    error: {
-      type: String,
-      default: null,
-    },
-    searchPlaceholder: {
-      type: String,
-      default: "Search...",
-    },
+  searchFields: {
+    type: Array,
+    default: () => ["name", "title"],
   },
-  setup(props) {
-    const searchTerm = ref("");
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+  error: {
+    type: String,
+    default: null,
+  },
+  searchPlaceholder: {
+    type: String,
+    default: "Search...",
+  },
+});
 
-    const filteredItems = computed(() => {
-      if (!searchTerm.value) {
-        return props.items;
+const searchTerm = ref("");
+
+const filteredItems = computed(() => {
+  if (!searchTerm.value) {
+    return props.items;
+  }
+
+  const term = searchTerm.value.toLowerCase();
+
+  return props.items.filter((item) => {
+    return props.searchFields.some((field) => {
+      if (item[field]) {
+        return item[field].toLowerCase().includes(term);
       }
-
-      const term = searchTerm.value.toLowerCase();
-
-      return props.items.filter((item) => {
-        return props.searchFields.some((field) => {
-          if (item[field]) {
-            return item[field].toLowerCase().includes(term);
-          }
-          return false;
-        });
-      });
+      return false;
     });
+  });
+});
 
-    function handleSearch(value) {
-      searchTerm.value = value;
-    }
-
-    return {
-      searchTerm,
-      filteredItems,
-      handleSearch,
-    };
-  },
-};
+function handleSearch(value) {
+  searchTerm.value = value;
+}
 </script>
 
 <template>

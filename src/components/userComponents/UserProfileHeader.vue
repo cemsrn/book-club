@@ -1,24 +1,20 @@
-<script>
+<script setup>
 import defaultAvatar from "@/assets/images/default-avatar.svg";
 
-export default {
-  name: "UserProfileHeader",
-  props: {
-    user: {
-      type: Object,
-      required: true,
-    },
+const props = defineProps({
+  user: {
+    type: Object,
+    required: true,
   },
-  methods: {
-    formatDate(dateString) {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-  },
+});
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 </script>
 

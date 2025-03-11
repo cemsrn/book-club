@@ -1,121 +1,104 @@
-<script>
+<script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import SearchableList from "@/components/searchComponents/SearchableList.vue";
 import getAvailableBooks from "@/api/Books/getAvailableBooks";
 
-export default {
-  name: "BorrowBooksView",
-  components: {
-    SearchableList,
-  },
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const books = ref([]);
-    const loading = ref(true);
-    const error = ref(null);
-    const borrowingBook = ref(null);
+const route = useRoute();
+const router = useRouter();
+const books = ref([]);
+const loading = ref(true);
+const error = ref(null);
+const borrowingBook = ref(null);
 
-    let userId = route.params.id;
+let userId = route.params.id;
 
-    // Handle potential issues with route parameters
-    if (!userId && route.params.userId) {
-      userId = route.params.userId;
+// Handle potential issues with route parameters
+if (!userId && route.params.userId) {
+  userId = route.params.userId;
+}
+
+onMounted(async () => {
+  await fetchAvailableBooks();
+});
+
+async function fetchAvailableBooks() {
+  try {
+    loading.value = true;
+    books.value = await getAvailableBooks();
+  } catch (err) {
+    error.value = err.message || "Failed to load available books";
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function borrowBook(book) {
+  try {
+    if (!userId) {
+      error.value = "User ID is missing. Cannot complete borrow operation.";
+      console.error("Missing userId:", route.params);
+      return;
     }
 
-    onMounted(async () => {
-      await fetchAvailableBooks();
+    borrowingBook.value = book.id;
+    const BASE_API = import.meta.env.VITE_BASE_API;
+
+    // Update book status to borrowed
+    await fetch(`${BASE_API}/books/${book.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: false, // Set to borrowed
+      }),
     });
 
-    async function fetchAvailableBooks() {
-      try {
-        loading.value = true;
-        books.value = await getAvailableBooks();
-      } catch (err) {
-        error.value = err.message || "Failed to load available books";
-        console.error(err);
-      } finally {
-        loading.value = false;
-      }
+    // Update user history
+    const userResponse = await fetch(`${BASE_API}/users/${userId}`);
+    if (!userResponse.ok) {
+      throw new Error(`Failed to fetch user: ${userResponse.status}`);
     }
 
-    async function borrowBook(book) {
-      try {
-        if (!userId) {
-          error.value = "User ID is missing. Cannot complete borrow operation.";
-          console.error("Missing userId:", route.params);
-          return;
-        }
-
-        borrowingBook.value = book.id;
-        const BASE_API = import.meta.env.VITE_BASE_API;
-
-        // Update book status to borrowed
-        await fetch(`${BASE_API}/books/${book.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: false, // Set to borrowed
-          }),
-        });
-
-        // Update user history
-        const userResponse = await fetch(`${BASE_API}/users/${userId}`);
-        if (!userResponse.ok) {
-          throw new Error(`Failed to fetch user: ${userResponse.status}`);
-        }
-
-        const userData = await userResponse.json();
-        const newBorrowRecord = {
-          book_id: book.id,
-          book_name: book.name,
-          action: "borrow",
-          borrow_date: new Date().toISOString(),
-          author: book.author,
-          publishing_house: book.publishing_house,
-          language: book.language,
-          status: "borrowed",
-        };
-
-        const updatedHistory = [newBorrowRecord, ...(userData.history || [])];
-
-        await fetch(`${BASE_API}/users/${userId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            history: updatedHistory,
-          }),
-        });
-
-        // Navigate back to user details
-        router.push(`/users/${userId}`);
-      } catch (err) {
-        error.value = err.message || "Failed to borrow book";
-        console.error(err);
-      } finally {
-        borrowingBook.value = null;
-      }
-    }
-
-    function goBack() {
-      router.back();
-    }
-
-    return {
-      books,
-      loading,
-      error,
-      borrowingBook,
-      borrowBook,
-      goBack,
+    const userData = await userResponse.json();
+    const newBorrowRecord = {
+      book_id: book.id,
+      book_name: book.name,
+      action: "borrow",
+      borrow_date: new Date().toISOString(),
+      author: book.author,
+      publishing_house: book.publishing_house,
+      language: book.language,
+      status: "borrowed",
     };
-  },
-};
+
+    const updatedHistory = [newBorrowRecord, ...(userData.history || [])];
+
+    await fetch(`${BASE_API}/users/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        history: updatedHistory,
+      }),
+    });
+
+    // Navigate back to user details
+    router.push(`/users/${userId}`);
+  } catch (err) {
+    error.value = err.message || "Failed to borrow book";
+    console.error(err);
+  } finally {
+    borrowingBook.value = null;
+  }
+}
+
+function goBack() {
+  router.back();
+}
 </script>
 
 <template>
