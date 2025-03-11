@@ -7,6 +7,7 @@ import BookEditView from "@/views/BookEditView.vue";
 import BookAddView from "@/views/BookAddView.vue";
 import DashboardView from "@/views/DashboardView.vue";
 import BookDetailsView from "@/views/BookDetailsView.vue";
+import BorrowBooksView from "@/views/BorrowBooksView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,11 @@ const router = createRouter({
       path: "/users/:id",
       name: "user",
       component: UserView,
+    },
+    {
+      path: "/users/:userId/borrow",
+      name: "BorrowBooks",
+      component: BorrowBooksView,
     },
     {
       path: "/books",

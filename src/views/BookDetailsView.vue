@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import getBook from "@/api/Books/getBook";
 
@@ -8,18 +8,49 @@ const router = useRouter();
 const book = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const borrowingUser = ref(null);
+const userLoading = ref(false);
+
+// Check if the book is currently borrowed
+const isBorrowed = computed(() => {
+  return book.value && book.value.status === false;
+});
 
 onMounted(async () => {
   try {
     const bookId = route.params.id;
     loading.value = true;
     book.value = await getBook(bookId);
+
+    // If the book is borrowed, fetch the borrowing user
+    if (isBorrowed.value && book.value.user_id) {
+      await fetchBorrowingUser(book.value.user_id);
+    }
   } catch (err) {
     error.value = err.message || "Failed to load book details";
   } finally {
     loading.value = false;
   }
 });
+
+// Fetch the user who borrowed the book
+async function fetchBorrowingUser(userId) {
+  try {
+    userLoading.value = true;
+    const BASE_API = import.meta.env.VITE_BASE_API;
+    const response = await fetch(`${BASE_API}/users/${userId}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch borrowing user: ${response.status}`);
+    }
+
+    borrowingUser.value = await response.json();
+  } catch (err) {
+    console.error("Error fetching borrowing user:", err);
+  } finally {
+    userLoading.value = false;
+  }
+}
 
 const goBack = () => {
   router.back();
@@ -115,6 +146,35 @@ const goBack = () => {
                 Last Updated
               </h2>
               <p>{{ new Date(book.updatedAt).toLocaleDateString() }}</p>
+            </div>
+
+            <div v-if="!book.status" class="col-span-2 mt-2">
+              <h2 class="text-sm font-semibold text-gray-500 mb-1">
+                Currently Borrowed By
+              </h2>
+              <div v-if="userLoading" class="flex items-center text-gray-600">
+                <div
+                  class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-blue-600 rounded-full"
+                ></div>
+                Loading user information...
+              </div>
+              <div v-else-if="borrowingUser" class="flex items-center">
+                <router-link
+                  :to="`/users/${borrowingUser.id}`"
+                  class="flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <img
+                    v-if="borrowingUser.avatar"
+                    :src="borrowingUser.avatar"
+                    :alt="borrowingUser.name"
+                    class="w-6 h-6 rounded-full mr-2 object-cover"
+                  />
+                  <span>{{ borrowingUser.name }}</span>
+                </router-link>
+              </div>
+              <p v-else class="text-gray-600 italic">
+                User information not available
+              </p>
             </div>
           </div>
 

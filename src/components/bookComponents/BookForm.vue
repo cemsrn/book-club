@@ -13,7 +13,7 @@ const props = defineProps({
       price: "",
       author: "",
       publishing_house: "",
-      status: false,
+      status: true,
     }),
   },
   isLoading: {
@@ -44,6 +44,9 @@ const buttonClass = computed(() => {
 });
 
 const handleSubmit = () => {
+  if (!isEditMode.value) {
+    props.book.status = true;
+  }
   emit("submit");
 };
 
@@ -175,19 +178,6 @@ const handleCancel = () => {
         min="0"
         placeholder="29.99"
       />
-    </div>
-
-    <!-- Status - Only show in Add mode -->
-    <div v-if="mode === 'add'" class="mb-4 flex items-center">
-      <input
-        id="status"
-        v-model="book.status"
-        type="checkbox"
-        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-      />
-      <label class="ml-2 text-sm font-medium text-gray-700" for="status">
-        Available for borrowing
-      </label>
     </div>
 
     <!-- Submit Button -->

@@ -59,7 +59,7 @@ function handleDelete() {
           published by {{ book.publishing_house }}
         </span>
         <span
-          v-if="book.available"
+          v-if="book.status"
           class="ml-auto bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
         >
           Available
