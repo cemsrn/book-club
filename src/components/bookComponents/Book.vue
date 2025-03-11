@@ -71,9 +71,16 @@ function handleDelete() {
           Borrowed
         </span>
       </div>
+      <router-link :to="`/books/${book.id}`" class="block mb-2">
+        <button
+          class="w-full bg-green-600 hover:bg-green-700 text-white py-1.5 px-3 rounded-md transition duration-300"
+        >
+          Details
+        </button>
+      </router-link>
 
       <div class="mt-4 grid grid-cols-2 gap-2">
-        <router-link :to="`/books/${book.id}`" class="block">
+        <router-link :to="`/books/${book.id}/edit`" class="block">
           <button
             class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded-md transition duration-300"
           >
@@ -83,7 +90,13 @@ function handleDelete() {
         <button
           @click="handleDelete"
           class="w-full bg-red-600 hover:bg-red-700 text-white py-1.5 px-3 rounded-md transition duration-300 flex items-center justify-center"
-          :disabled="isDeleting && deletingBookId === book.id"
+          :disabled="(isDeleting && deletingBookId === book.id) || !book.status"
+          :class="[!book.status ? 'opacity-50 cursor-not-allowed' : '']"
+          :title="
+            !book.status
+              ? 'Cannot delete books that are currently borrowed'
+              : ''
+          "
         >
           <div v-if="isDeleting && deletingBookId === book.id" class="mr-1">
             <div class="relative h-4 w-4">
@@ -96,7 +109,11 @@ function handleDelete() {
             </div>
           </div>
           <span>{{
-            isDeleting && deletingBookId === book.id ? "Deleting..." : "Delete"
+            isDeleting && deletingBookId === book.id
+              ? "Deleting..."
+              : !book.status
+              ? "Can't Delete"
+              : "Delete"
           }}</span>
         </button>
       </div>

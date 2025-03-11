@@ -1,3 +1,49 @@
+<script>
+import { getUserById } from "@/api/Users/getUserData";
+import defaultAvatar from "@/assets/images/default-avatar.svg";
+
+export default {
+  name: "UserDetails",
+  data() {
+    return {
+      user: null,
+      loading: true,
+      error: null,
+    };
+  },
+  created() {
+    this.fetchUserData();
+  },
+  watch: {
+    "$route.params.id": "fetchUserData",
+  },
+  methods: {
+    async fetchUserData() {
+      try {
+        this.loading = true;
+        this.error = null;
+        const userId = this.$route.params.id;
+        this.user = await getUserById(userId);
+      } catch (error) {
+        this.error = `Failed to load user: ${error.message}`;
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    formatDate(dateString) {
+      if (!dateString) return "N/A";
+
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    },
+  },
+};
+</script>
+
 <template>
   <div v-if="user" class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
     <div class="flex flex-col md:flex-row gap-8 mb-8">
@@ -113,8 +159,13 @@
           ]"
         >
           <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-semibold text-blue-700">
-              {{ item.book_name }}
+            <h3 class="text-lg font-semibold">
+              <router-link
+                :to="`/books/${item.book_id}`"
+                class="text-blue-700 hover:text-blue-900 hover:underline"
+              >
+                {{ item.book_name }}
+              </router-link>
             </h3>
             <span
               :class="[
@@ -207,49 +258,3 @@
     <p class="text-gray-600">Loading user details...</p>
   </div>
 </template>
-
-<script>
-import { getUserById } from "@/api/Users/getUserData";
-import defaultAvatar from "@/assets/images/default-avatar.svg";
-
-export default {
-  name: "UserDetails",
-  data() {
-    return {
-      user: null,
-      loading: true,
-      error: null,
-    };
-  },
-  created() {
-    this.fetchUserData();
-  },
-  watch: {
-    "$route.params.id": "fetchUserData",
-  },
-  methods: {
-    async fetchUserData() {
-      try {
-        this.loading = true;
-        this.error = null;
-        const userId = this.$route.params.id;
-        this.user = await getUserById(userId);
-      } catch (error) {
-        this.error = `Failed to load user: ${error.message}`;
-        console.error(error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    formatDate(dateString) {
-      if (!dateString) return "N/A";
-
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-  },
-};
-</script>
