@@ -1,25 +1,18 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import getAllBooks from "@/api/Books/getAllBooks.js";
 import deleteBook from "@/api/Books/deleteBook.js";
 import { useRouter } from "vue-router";
-import defaultAvatar from "@/assets/images/default-avatar.svg";
-import LoadMoreButton from "@/components/buttons/LoadMore.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import Book from "@/components/bookComponents/Book.vue";
 import BackToHome from "@/components/buttons/BackToHome.vue";
+import SearchableList from "@/components/searchComponents/SearchableList.vue";
 
 const router = useRouter();
 const allBooks = ref([]);
-const books = ref([]);
 const loading = ref(false);
-const loadingMore = ref(false);
 const isDeleting = ref(false);
 const deletingBookId = ref(null);
-
-// Pagination
-const booksPerPage = 8;
-const currentCount = ref(0);
 
 // Navigation
 function goToHome() {
@@ -30,8 +23,6 @@ function goToAddNewBook() {
   router.push("/books/add");
 }
 
-const hasMoreBooks = computed(() => currentCount.value < allBooks.value.length);
-
 // Fetch initial data
 async function fetchBooks() {
   loading.value = true;
@@ -39,36 +30,10 @@ async function fetchBooks() {
   try {
     const data = await getAllBooks();
     allBooks.value = data;
-
-    // Show initial batch
-    currentCount.value = Math.min(booksPerPage, data.length);
-    books.value = data.slice(0, currentCount.value);
   } catch (err) {
     console.error("Couldn't load books:", err);
   } finally {
     loading.value = false;
-  }
-}
-
-// Load more books when scrolling
-async function loadMoreBooks() {
-  if (loadingMore.value || !hasMoreBooks.value) return;
-
-  loadingMore.value = true;
-
-  try {
-    // Figure out how many more to show
-    const nextBatch = Math.min(
-      booksPerPage,
-      allBooks.value.length - currentCount.value
-    );
-
-    currentCount.value += nextBatch;
-    books.value = allBooks.value.slice(0, currentCount.value);
-  } catch (err) {
-    console.error("Failed loading more books:", err);
-  } finally {
-    loadingMore.value = false;
   }
 }
 
@@ -83,10 +48,8 @@ async function handleDeleteBook(id) {
   try {
     await deleteBook(id);
 
-    // Update both arrays after successful delete
+    // Update array after successful delete
     allBooks.value = allBooks.value.filter((book) => book.id !== id);
-    books.value = books.value.filter((book) => book.id !== id);
-    currentCount.value = books.value.length;
   } catch (err) {
     alert("Couldn't delete the book. Try again?");
     console.error("Delete error:", err);
@@ -128,34 +91,48 @@ onMounted(fetchBooks);
       <LoadingSpinner size="md" text="Loading books..." />
     </div>
 
-    <!-- Books Grid -->
-    <div
-      v-if="books.length"
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
-    >
-      <Book
-        v-for="book in books"
-        :key="book.id"
-        :book="book"
-        :is-deleting="isDeleting"
-        :deleting-book-id="deletingBookId"
-        @delete="handleDeleteBook"
-      />
-    </div>
+    <div v-else>
+      <!-- Search functionality -->
+      <SearchableList
+        :items="allBooks"
+        :search-fields="['name', 'author', 'publishing_house']"
+        :loading="loading"
+        search-placeholder="Search books by title, author or publisher..."
+        :max-suggestions="5"
+        v-slot="{ items: filteredItems }"
+        class="mb-6"
+      >
+        <template v-if="filteredItems && filteredItems.length > 0">
+          <!-- Search results notification -->
+          <div v-if="filteredItems !== allBooks" class="mb-4 text-center">
+            <p class="text-blue-700">
+              {{ filteredItems.length }} matching books found
+            </p>
+          </div>
 
-    <!-- Load More Button - Updated to use the component -->
-    <LoadMoreButton
-      v-if="hasMoreBooks && !loading"
-      :is-loading="loadingMore"
-      :has-more-items="hasMoreBooks"
-      button-text="Show More Books"
-      loading-text="Loading..."
-      @load-more="loadMoreBooks"
-    />
+          <!-- Books Grid -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+          >
+            <Book
+              v-for="book in filteredItems"
+              :key="book.id"
+              :book="book"
+              :is-deleting="isDeleting"
+              :deleting-book-id="deletingBookId"
+              @delete="handleDeleteBook"
+            />
+          </div>
 
-    <!-- Book Count Display -->
-    <div v-if="books.length && !loading" class="text-center text-gray-600 mt-4">
-      Showing {{ currentCount }} of {{ allBooks.length }} books
+          <!-- Book Count Display -->
+          <div class="text-center text-gray-600 mt-4">
+            <span v-if="filteredItems !== allBooks">
+              Showing {{ filteredItems.length }} filtered results
+            </span>
+            <span v-else> Showing all {{ allBooks.length }} books </span>
+          </div>
+        </template>
+      </SearchableList>
     </div>
   </main>
 </template>

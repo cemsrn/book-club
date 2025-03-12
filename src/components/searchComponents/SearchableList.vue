@@ -23,8 +23,13 @@ const props = defineProps({
     type: String,
     default: "Search...",
   },
+  maxSuggestions: {
+    type: Number,
+    default: 5,
+  },
 });
 
+const emit = defineEmits(["update:search"]);
 const searchTerm = ref("");
 
 const filteredItems = computed(() => {
@@ -44,15 +49,36 @@ const filteredItems = computed(() => {
   });
 });
 
+// Generate search suggestions from all items
+const suggestions = computed(() => {
+  const allSuggestions = new Set();
+
+  props.items.forEach((item) => {
+    props.searchFields.forEach((field) => {
+      if (item[field]) {
+        allSuggestions.add(item[field]);
+      }
+    });
+  });
+
+  return Array.from(allSuggestions);
+});
+
 function handleSearch(value) {
   searchTerm.value = value;
+  emit("update:search", value);
 }
 </script>
 
 <template>
   <div>
     <div class="mb-6">
-      <SearchBar :placeholder="searchPlaceholder" @search="handleSearch" />
+      <SearchBar
+        :placeholder="searchPlaceholder"
+        :suggestions="suggestions"
+        :max-suggestions="maxSuggestions"
+        @search="handleSearch"
+      />
     </div>
 
     <div v-if="loading" class="flex justify-center p-12">

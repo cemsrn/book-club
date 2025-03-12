@@ -43,7 +43,7 @@ const returnBook = async (bookId) => {
     returnLoading.value = true;
     returnBookId.value = bookId;
 
-    // 1. Update the book status to available
+    // Update the book status to available
     const BASE_API = import.meta.env.VITE_BASE_API;
     const bookResponse = await fetch(`${BASE_API}/books/${bookId}`);
     await bookResponse.json();
@@ -58,7 +58,7 @@ const returnBook = async (bookId) => {
       }),
     });
 
-    // 2. Update user history
+    // Update user history
     const userId = route.params.id;
     const userResponse = await fetch(`${BASE_API}/users/${userId}`);
     const userData = await userResponse.json();

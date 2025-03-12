@@ -1,17 +1,15 @@
 <script setup>
 import UserDetails from "@/components/userComponents/UserDetails.vue";
 import { useRouter } from "vue-router";
-import BackToHome from "@/components/buttons/BackToHome.vue";
+import GoBack from "@/components/buttons/GoBack.vue";
 
 const router = useRouter();
-const goToHome = () => {
-  router.push("/");
-};
 </script>
 
 <template>
   <div>
-    <BackToHome />
+    <GoBack />
+
     <h1 class="text-4xl font-bold text-center text-blue-800 mb-8">
       User Details
     </h1>

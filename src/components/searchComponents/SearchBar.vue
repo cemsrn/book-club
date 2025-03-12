@@ -1,51 +1,161 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, computed } from "vue";
 
 const props = defineProps({
   placeholder: {
     type: String,
     default: "Search...",
   },
+  suggestions: {
+    type: Array,
+    default: () => [],
+  },
+  maxSuggestions: {
+    type: Number,
+    default: 5,
+  },
 });
 
 const emit = defineEmits(["search"]);
-const searchText = ref("");
 
-function clearSearch() {
-  searchText.value = "";
-  emit("search", "");
+const searchInput = ref("");
+const showSuggestions = ref(false);
+const activeSuggestionIndex = ref(-1);
+const isSelecting = ref(false); // Track if we're selecting a suggestion
+
+const filteredSuggestions = computed(() => {
+  if (!searchInput.value) return [];
+
+  return props.suggestions
+    .filter((item) =>
+      item.toLowerCase().includes(searchInput.value.toLowerCase())
+    )
+    .slice(0, props.maxSuggestions);
+});
+
+function handleSearch() {
+  emit("search", searchInput.value);
+  showSuggestions.value = false;
 }
 
-function updateSearch() {
-  emit("search", searchText.value);
+function selectSuggestion(suggestion) {
+  isSelecting.value = true;
+  searchInput.value = suggestion;
+  handleSearch(); // Immediately search when selecting a suggestion
+  showSuggestions.value = false;
+
+  // Reset isSelecting after a short delay
+  setTimeout(() => {
+    isSelecting.value = false;
+  }, 100);
 }
+
+function handleKeydown(e) {
+  if (e.key === "Enter") {
+    // When Enter is pressed and no suggestion is active
+    if (activeSuggestionIndex.value < 0) {
+      e.preventDefault();
+      handleSearch();
+      return;
+    }
+  }
+
+  if (!filteredSuggestions.value.length) return;
+
+  // Arrow down
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    activeSuggestionIndex.value =
+      activeSuggestionIndex.value < filteredSuggestions.value.length - 1
+        ? activeSuggestionIndex.value + 1
+        : 0;
+  }
+
+  // Arrow up
+  else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    activeSuggestionIndex.value =
+      activeSuggestionIndex.value > 0
+        ? activeSuggestionIndex.value - 1
+        : filteredSuggestions.value.length - 1;
+  }
+
+  // Enter with active suggestion
+  else if (e.key === "Enter" && activeSuggestionIndex.value >= 0) {
+    e.preventDefault();
+    selectSuggestion(filteredSuggestions.value[activeSuggestionIndex.value]);
+  }
+
+  // Escape
+  else if (e.key === "Escape") {
+    showSuggestions.value = false;
+    activeSuggestionIndex.value = -1;
+  }
+}
+
+function handleBlur() {
+  // Only hide suggestions if we're not in the process of selecting an item
+  if (!isSelecting.value) {
+    setTimeout(() => {
+      showSuggestions.value = false;
+    }, 150);
+  }
+}
+
+function handleFocus() {
+  // Only show suggestions if we have input and we're not selecting an item
+  if (searchInput.value && !isSelecting.value) {
+    showSuggestions.value = true;
+  }
+}
+
+// Modified: only update suggestions display, don't search automatically
+watch(searchInput, () => {
+  if (!isSelecting.value) {
+    showSuggestions.value = !!searchInput.value;
+    activeSuggestionIndex.value = -1;
+  }
+});
 </script>
 
 <template>
   <div class="relative">
-    <input
-      v-model="searchText"
-      type="text"
-      :placeholder="placeholder"
-      class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-      @input="updateSearch"
-    />
-    <button
-      v-if="searchText"
-      @click="clearSearch"
-      type="button"
-      class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+    <div class="flex items-center">
+      <input
+        v-model="searchInput"
+        type="text"
+        :placeholder="placeholder"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        @keydown="handleKeydown"
+        @focus="handleFocus"
+        @blur="handleBlur"
+      />
+      <button
+        @click="handleSearch"
+        class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
       >
-        <path
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-        />
-      </svg>
-    </button>
+        Search
+      </button>
+    </div>
+
+    <!-- Autocomplete suggestions -->
+    <div
+      v-if="showSuggestions && filteredSuggestions.length"
+      class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto"
+    >
+      <ul>
+        <li
+          v-for="(suggestion, index) in filteredSuggestions"
+          :key="index"
+          :class="[
+            'px-4 py-2 cursor-pointer hover:bg-gray-100',
+            { 'bg-blue-100': index === activeSuggestionIndex },
+          ]"
+          @mousedown="selectSuggestion(suggestion)"
+        >
+          {{ suggestion }}
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

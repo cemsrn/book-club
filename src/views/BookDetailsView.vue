@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import getBook from "@/api/Books/getBook";
+import GoBack from "@/components/buttons/GoBack.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -59,12 +60,7 @@ const goBack = () => {
 
 <template>
   <div class="max-w-4xl mx-auto p-4">
-    <button
-      @click="goBack"
-      class="mb-6 flex items-center text-blue-600 hover:text-blue-800"
-    >
-      <span class="mr-1">←</span> Back to Books
-    </button>
+    <GoBack />
 
     <div v-if="loading" class="flex justify-center p-12">
       <div
