@@ -161,9 +161,9 @@ function goBack() {
       <div
         v-for="book in books"
         :key="book.id"
-        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-200"
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-200 flex flex-col h-full"
       >
-        <div class="p-4">
+        <div class="p-4 flex-1 flex flex-col">
           <div class="mb-4">
             <img
               v-if="book.image"
@@ -179,24 +179,26 @@ function goBack() {
             </div>
           </div>
 
-          <h2 class="text-lg font-semibold text-gray-800 mb-2">
-            {{ book.name }}
-          </h2>
-          <p class="text-gray-700 mb-2">
-            by <span class="font-medium">{{ book.author }}</span>
-          </p>
+          <div class="flex-1">
+            <h2 class="text-lg font-semibold text-gray-800 mb-2">
+              {{ book.name }}
+            </h2>
+            <p class="text-gray-700 mb-2">
+              by <span class="font-medium">{{ book.author }}</span>
+            </p>
 
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span
-              class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
-            >
-              {{ book.publishing_house }}
-            </span>
-            <span
-              class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
-            >
-              {{ book.language }}
-            </span>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span
+                class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                {{ book.publishing_house }}
+              </span>
+              <span
+                class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                {{ book.language }}
+              </span>
+            </div>
           </div>
 
           <button

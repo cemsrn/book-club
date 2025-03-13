@@ -18,6 +18,71 @@ const error = ref(null);
 const returnLoading = ref(false);
 const returnBookId = ref(null);
 
+// Edit mode state
+const isEditing = ref(false);
+const editName = ref("");
+const editLocation = ref("");
+
+// Begin editing user profile
+const startEditing = () => {
+  editName.value = user.value.name;
+  editLocation.value = user.value.location;
+  isEditing.value = true;
+};
+
+// Cancel editing
+const cancelEditing = () => {
+  isEditing.value = false;
+};
+
+// Save user profile changes
+const saveUserChanges = async () => {
+  try {
+    if (!user.value || !user.value.id) {
+      throw new Error("User information not available");
+    }
+
+    loading.value = true;
+    const BASE_API = import.meta.env.VITE_BASE_API;
+    const userResponse = await fetch(`${BASE_API}/users/${user.value.id}`);
+
+    if (!userResponse.ok) {
+      throw new Error(`Failed to fetch user: ${userResponse.status}`);
+    }
+
+    const userData = await userResponse.json();
+
+    // Update with edited data
+    const userUpdateResponse = await fetch(
+      `${BASE_API}/users/${user.value.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...userData,
+          name: editName.value,
+          location: editLocation.value,
+        }),
+      }
+    );
+
+    if (!userUpdateResponse.ok) {
+      throw new Error(`Failed to update user: ${userUpdateResponse.status}`);
+    }
+
+    // Refresh user data
+    await fetchUserData();
+    isEditing.value = false;
+  } catch (err) {
+    error.value = `Failed to update profile: ${err.message}`;
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+};
+
 // Computed properties
 const currentlyBorrowed = computed(() => {
   if (!user.value || !user.value.history) return [];
@@ -177,7 +242,57 @@ onMounted(fetchUserData);
     <!-- Main content when data is loaded -->
     <div v-if="user" class="max-w-4xl mx-auto bg-white rounded-lg shadow-md">
       <!-- User Profile Section -->
-      <UserProfileHeader :user="user" />
+      <div class="p-6">
+        <div v-if="!isEditing">
+          <UserProfileHeader :user="user" />
+          <div class="mt-4 text-right">
+            <button
+              @click="startEditing"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              Edit Profile
+            </button>
+          </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div v-else class="p-4 bg-gray-50 rounded-lg">
+          <h2 class="text-xl font-semibold mb-4">Edit Profile</h2>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-1" for="name">Name</label>
+            <input
+              id="name"
+              v-model="editName"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-1" for="location"
+              >Location</label
+            >
+            <input
+              id="location"
+              v-model="editLocation"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div class="flex justify-end space-x-2">
+            <button
+              @click="cancelEditing"
+              class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+            >
+              Cancel
+            </button>
+            <button
+              @click="saveUserChanges"
+              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              :disabled="loading"
+            >
+              {{ loading ? "Saving..." : "Save Changes" }}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Currently Borrowed Books Section -->
       <div class="p-6 border-t border-gray-100">
