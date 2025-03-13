@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { Chart, registerables } from "chart.js";
 import BackToHome from "@/components/buttons/BackToHome.vue";
+import { useRouter } from "vue-router";
 
 // API and components
 import getAllUsers from "@/api/Users/getAllUsers";
@@ -28,6 +29,10 @@ const users = ref([]);
 const books = ref([]);
 const isLoading = ref(true);
 const errorMessage = ref("");
+const router = useRouter();
+
+// Check if the user is in guest mode
+const isGuest = computed(() => localStorage.getItem("guestMode") === "true");
 
 // Use our stats helpers
 const { totalMembers, borrowedLastWeek } = useDashboardMetrics(users, books);
@@ -54,13 +59,36 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+// Guest exit function
+const exitGuestMode = () => {
+  localStorage.removeItem("guestMode");
+  router.push("/login");
+};
 </script>
 
 <template>
-  <BackToHome />
-  <br />
-  <br />
   <div class="dashboard p-4 sm:p-6 bg-gray-50 min-h-screen">
+    <div v-if="isGuest" class="mb-6 bg-blue-100 p-4 rounded-md">
+      <div class="flex justify-between items-center">
+        <p class="text-blue-800">
+          <strong>Guest Mode</strong> - You're viewing limited dashboard metrics
+        </p>
+        <button
+          @click="exitGuestMode"
+          class="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+        >
+          Exit Guest Mode
+        </button>
+      </div>
+    </div>
+
+    <template v-if="!isGuest">
+      <BackToHome />
+      <br />
+      <br />
+    </template>
+
     <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
       Book Club Dashboard
     </h1>
@@ -76,7 +104,7 @@ onMounted(async () => {
 
     <div v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <!-- Total Members Card -->
+        <!-- Total Members Card - Available to all -->
         <StatisticsCard
           title="Total Members"
           :value="totalMembers"
@@ -84,7 +112,7 @@ onMounted(async () => {
           borderColor="border-blue-500"
         />
 
-        <!-- Books Borrowed Last Week Card -->
+        <!-- Books Borrowed Last Week Card - Available to all -->
         <StatisticsCard
           title="Books Borrowed (Last Week)"
           :value="borrowedLastWeek"
@@ -93,20 +121,31 @@ onMounted(async () => {
         />
       </div>
 
-      <!-- Chart Section -->
+      <!-- Chart Section - Available to all -->
       <WeeklyBorrowChart
         :dates="chartDates"
         :borrowCounts="chartBorrowCounts"
       />
 
-      <!-- Top Publishers and Languages -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <TopPublishersTable :publishers="topPublishers" />
-        <TopLanguagesTable :languages="topLanguages" />
-      </div>
+      <!-- Admin-only sections -->
+      <template v-if="!isGuest">
+        <!-- Top Publishers and Languages -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <TopPublishersTable :publishers="topPublishers" />
+          <TopLanguagesTable :languages="topLanguages" />
+        </div>
 
-      <!-- Top 10 Members -->
-      <TopBorrowersTable :borrowers="topBorrowers" />
+        <!-- Top 10 Members -->
+        <TopBorrowersTable :borrowers="topBorrowers" />
+      </template>
+
+      <!-- Guest message about restricted content -->
+      <div v-else class="bg-gray-100 p-6 rounded-lg mt-6 text-center">
+        <p class="text-gray-700">
+          Sign in with an admin account to view additional statistics and
+          metrics.
+        </p>
+      </div>
     </div>
   </div>
 </template>
