@@ -11,6 +11,7 @@ import BookDetailsView from "@/views/BookDetailsView.vue";
 import LoginView from "@/views/LoginView.vue";
 import MemberProfileView from "@/views/MemberProfileView.vue";
 import BorrowBooksView from "@/views/BorrowBooksView.vue";
+import AvailableBooksView from "@/views/AvailableBooksView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,7 +25,7 @@ const router = createRouter({
     {
       path: "/available-books/:id",
       name: "AvailableBooks",
-      component: () => import("@/views/AvailableBooksView.vue"),
+      component: AvailableBooksView,
       meta: { requiresAuth: true },
     },
     {
@@ -60,7 +61,7 @@ const router = createRouter({
       name: "book-details",
       component: BookDetailsView,
       beforeEnter: authGuard,
-      meta: { requiresAdmin: true },
+      meta: { requiresAuth: true },
     },
     {
       path: "/books/add",
@@ -73,6 +74,7 @@ const router = createRouter({
       path: "/users/:userId/borrow",
       name: "BorrowBooks",
       component: BorrowBooksView,
+      meta: { requiresAdmin: true },
     },
     {
       path: "/dashboard",

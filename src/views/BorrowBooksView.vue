@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import SearchableList from "@/components/searchComponents/SearchableList.vue";
+import BookGrid from "@/components/bookComponents/availableBooks/BookGrid.vue";
 import getAvailableBooks from "@/api/Books/getAvailableBooks";
 
 const route = useRoute();
@@ -46,13 +47,22 @@ async function borrowBook(book) {
     const BASE_API = import.meta.env.VITE_BASE_API;
 
     // Update book status to borrowed
+    const bookResponse = await fetch(`${BASE_API}/books/${book.id}`);
+    if (!bookResponse.ok) {
+      throw new Error(`Failed to fetch book: ${bookResponse.status}`);
+    }
+
+    const bookData = await bookResponse.json();
+
     await fetch(`${BASE_API}/books/${book.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        ...bookData,
         status: false, // Set to borrowed
+        user_id: userId, // Associate with current user
       }),
     });
 
@@ -82,6 +92,7 @@ async function borrowBook(book) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        ...userData,
         history: updatedHistory,
       }),
     });
@@ -119,71 +130,13 @@ function goBack() {
       :search-fields="['name', 'author', 'publishing_house']"
       search-placeholder="Search books by title, author or publisher..."
     >
-      <!-- Custom rendering of the book list -->
       <template v-slot:default="{ items }">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="book in items"
-            :key="book.id"
-            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300 border border-gray-200 flex flex-col h-full"
-          >
-            <div class="p-4 flex-1 flex flex-col">
-              <div class="mb-4">
-                <img
-                  v-if="book.image"
-                  :src="book.image"
-                  :alt="`Cover of ${book.name}`"
-                  class="w-full h-48 object-cover rounded-md"
-                />
-                <div
-                  v-else
-                  class="w-full h-48 bg-gray-200 rounded-md flex items-center justify-center"
-                >
-                  <span class="text-gray-500">No cover available</span>
-                </div>
-              </div>
-
-              <div class="flex-1">
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">
-                  {{ book.name }}
-                </h2>
-                <p class="text-gray-700 mb-2">
-                  by <span class="font-medium">{{ book.author }}</span>
-                </p>
-
-                <div class="mt-3 flex flex-wrap gap-2">
-                  <span
-                    class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
-                  >
-                    {{ book.publishing_house }}
-                  </span>
-                  <span
-                    class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
-                  >
-                    {{ book.language }}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                @click="borrowBook(book)"
-                :disabled="borrowingBook === book.id"
-                class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition duration-300 flex items-center justify-center"
-              >
-                <div v-if="borrowingBook === book.id" class="mr-2">
-                  <div
-                    class="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"
-                  ></div>
-                </div>
-                {{
-                  borrowingBook === book.id
-                    ? "Processing..."
-                    : "Borrow This Book"
-                }}
-              </button>
-            </div>
-          </div>
-        </div>
+        <BookGrid
+          :books="items"
+          :loadingBookId="borrowingBook"
+          emptyMessage="No books are currently available for borrowing."
+          @borrow="borrowBook"
+        />
       </template>
     </SearchableList>
   </div>

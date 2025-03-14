@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useAuth0 } from "@auth0/auth0-vue";
 import getBook from "@/api/Books/getBook";
 import GoBack from "@/components/buttons/GoBack.vue";
 
 const route = useRoute();
 const router = useRouter();
+const { user: auth0User } = useAuth0();
 const book = ref(null);
 const loading = ref(true);
 const error = ref(null);
@@ -15,6 +17,11 @@ const userLoading = ref(false);
 // Check if the book is currently borrowed
 const isBorrowed = computed(() => {
   return book.value && book.value.status === false;
+});
+
+// Check if user is admin
+const isAdmin = computed(() => {
+  return auth0User.value && auth0User.value["app_metadata.role"] === "admin";
 });
 
 onMounted(async () => {
@@ -156,6 +163,7 @@ const goBack = () => {
               </div>
               <div v-else-if="borrowingUser" class="flex items-center">
                 <router-link
+                  v-if="isAdmin"
                   :to="`/users/${borrowingUser.id}`"
                   class="flex items-center text-blue-600 hover:text-blue-800 hover:underline"
                 >
@@ -167,6 +175,15 @@ const goBack = () => {
                   />
                   <span>{{ borrowingUser.name }}</span>
                 </router-link>
+                <div v-else class="flex items-center">
+                  <img
+                    v-if="borrowingUser.avatar"
+                    :src="borrowingUser.avatar"
+                    :alt="borrowingUser.name"
+                    class="w-6 h-6 rounded-full mr-2 object-cover"
+                  />
+                  <span>{{ borrowingUser.name }}</span>
+                </div>
               </div>
               <p v-else class="text-gray-600 italic">
                 User information not available
@@ -174,7 +191,8 @@ const goBack = () => {
             </div>
           </div>
 
-          <div class="flex gap-3 mt-6">
+          <!-- Only show Edit button for admins -->
+          <div v-if="isAdmin" class="flex gap-3 mt-6">
             <router-link :to="`/books/${book.id}/edit`">
               <button
                 class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition duration-300"
